@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" font-family="'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1117"/>
+      <stop offset="1" stop-color="#161b29"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8A2BE2"/>
+      <stop offset="1" stop-color="#4f9bff"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8A2BE2"/>
+    </marker>
+  </defs>
+
+  <rect width="1280" height="640" fill="url(#bg)"/>
+
+  <!-- title -->
+  <text x="640" y="92" text-anchor="middle" font-size="62" font-weight="700" fill="#ffffff">plan-with-loops</text>
+  <text x="640" y="138" text-anchor="middle" font-size="25" fill="#8b97ab">Plan mode that designs the agent loop — and learns from every run</text>
+
+  <!-- flywheel cycle: 4 clockwise arcs around an ellipse centred (640,400) rx=330 ry=150 -->
+  <g fill="none" stroke="url(#accent)" stroke-width="3.5" marker-end="url(#arrow)" opacity="0.9">
+    <path d="M 855 273 A 330 150 0 0 1 945 388"/>   <!-- top  -> right -->
+    <path d="M 945 412 A 330 150 0 0 1 855 527"/>   <!-- right-> bottom -->
+    <path d="M 425 527 A 330 150 0 0 1 335 412"/>   <!-- bottom-> left -->
+    <path d="M 335 388 A 330 150 0 0 1 425 273"/>   <!-- left -> top -->
+  </g>
+
+  <!-- centre label -->
+  <text x="640" y="392" text-anchor="middle" font-size="20" fill="#5b6678" letter-spacing="3">THE FLYWHEEL</text>
+  <text x="640" y="420" text-anchor="middle" font-size="16" fill="#3f4757" letter-spacing="2">reflexion-style memory</text>
+
+  <!-- node helper: pill + 2 lines -->
+  <!-- TOP -->
+  <g>
+    <rect x="470" y="222" width="340" height="64" rx="32" fill="#1c2333" stroke="#8A2BE2" stroke-width="2"/>
+    <text x="640" y="250" text-anchor="middle" font-size="21" font-weight="700" fill="#c9a4ff">/plan-with-loops</text>
+    <text x="640" y="272" text-anchor="middle" font-size="15" fill="#8b97ab">design the loop (read-only)</text>
+  </g>
+  <!-- RIGHT -->
+  <g>
+    <rect x="800" y="368" width="300" height="64" rx="32" fill="#1c2333" stroke="#4f9bff" stroke-width="2"/>
+    <text x="950" y="396" text-anchor="middle" font-size="21" font-weight="700" fill="#9ec5ff">run it</text>
+    <text x="950" y="418" text-anchor="middle" font-size="15" fill="#8b97ab">via the Workflow tool</text>
+  </g>
+  <!-- BOTTOM -->
+  <g>
+    <rect x="470" y="514" width="340" height="64" rx="32" fill="#1c2333" stroke="#8A2BE2" stroke-width="2"/>
+    <text x="640" y="542" text-anchor="middle" font-size="21" font-weight="700" fill="#c9a4ff">/loops-save</text>
+    <text x="640" y="564" text-anchor="middle" font-size="15" fill="#8b97ab">remember what worked</text>
+  </g>
+  <!-- LEFT -->
+  <g>
+    <rect x="180" y="368" width="300" height="64" rx="32" fill="#1c2333" stroke="#4f9bff" stroke-width="2"/>
+    <text x="330" y="396" text-anchor="middle" font-size="21" font-weight="700" fill="#9ec5ff">/loops-graduate</text>
+    <text x="330" y="418" text-anchor="middle" font-size="15" fill="#8b97ab">promote the winners</text>
+  </g>
+</svg>

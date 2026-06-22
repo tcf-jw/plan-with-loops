@@ -5,3 +5,6 @@ desktop.ini
 *.swp
 .idea/
 .vscode/
+
+# tool scratch
+.playwright-mcp/
