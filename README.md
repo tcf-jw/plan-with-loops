@@ -1,7 +1,7 @@
 # 🌀 plan-with-loops
 
 <p align="center">
-  <img src="assets/banner.svg" alt="plan-with-loops — design the loop, remember what worked, graduate the winners" width="100%">
+  <img src="assets/banner.png" alt="plan-with-loops — design the loop, remember what worked, graduate the winners" width="100%">
 </p>
 
 **Plan mode for Claude Code that designs the *agent loop* — then gets smarter every time you run one.**
