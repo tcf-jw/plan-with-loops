@@ -36,7 +36,7 @@ This is a **three-skill flywheel** that fixes both halves of that problem:
 ```
 
 1. **Plan smarter** — `plan-with-loops` designs the roster + loop topology for you, scaled to the effort you ask for, and **recalls your past runs** so it stops repeating mistakes.
-2. **Remember what worked** — `loops-save` captures each run (roster, pattern, outcome, and *why*) as durable memory.
+2. **Remember what worked** — each run's facts are captured *automatically* at loop-end; `loops-save` stamps your verdict + the *why* onto it. Durable memory, no lost context.
 3. **Crystallize the winners** — `loops-graduate` turns a loop that's proven itself into a brand-new reusable skill.
 
 It's [Reflexion](https://arxiv.org/abs/2303.11366)-style long-term memory for your orchestration patterns — verbal lessons, not gradients.
@@ -48,7 +48,7 @@ It's [Reflexion](https://arxiv.org/abs/2303.11366)-style long-term memory for yo
 | Skill | Trigger | What it does | Writes? |
 |-------|---------|--------------|---------|
 | 🧭 **plan-with-loops** | `/plan-with-loops [low\|medium\|high]` | Read-only planner. Produces a 4-part design doc: step plan → agent roster → loop topology → implementation wired to the `Workflow` tool. Recalls prior runs to bias the design. | ❌ Nothing — pure design doc |
-| 💾 **loops-save** | `/loops-save` | Captures a completed run as a *loop-record* + an *agent-type registry* note, with Reflexion lessons (what worked / what you'd change / what's reusable). | ✅ To your notes vault |
+| 💾 **loops-save** | `/loops-save` | Stamps the outcome + Reflexion lessons (what worked / what you'd change / what's reusable) onto the record the loop auto-wrote, and updates the *agent-type registry*. | ✅ `~/.claude/loops/` |
 | 🎓 **loops-graduate** | `/loops-graduate` | Promotes a proven loop (`outcome: worked`, ideally repeated) into its own `~/.claude/skills/<name>/SKILL.md`. You are the gatekeeper. | ✅ A new skill file |
 
 ### What a plan looks like
@@ -153,11 +153,18 @@ These skills speak **Claude Code native**, not LangGraph or CrewAI. The design t
 
 ---
 
-## Optional: the memory vault
+## Memory: how the flywheel persists
 
-`loops-save` and the recall step in `plan-with-loops` read/write a notes vault via the `query_vault` / `save_to_vault` MCP tools (built for an Obsidian-style "InfiniteVoid" vault). This is what gives you **cross-session learning**.
+Loop memory is **plain markdown** in `~/.claude/loops/` — zero dependencies, greppable, portable across machines. No database, no service to stand up.
 
-**It's optional.** Without a vault, `plan-with-loops` simply notes *"no prior loops found"* and plans from first principles — you still get the full loop-design half. `loops-save` / `loops-graduate` need somewhere to persist, so wire them to your own store if you want the flywheel. Want them backed by plain markdown files or a different MCP store instead? **That's a great first PR** — see below.
+Capture is **two-step, designed so context is never lost**:
+
+1. **Auto (the facts).** Every loop `plan-with-loops` designs ends with a mandatory `capture` phase: a `recorder` agent writes `loop-record-<slug>-<date>.md` — task, roster, topology, results, token cost — the instant the run finishes, straight from the Workflow's own state. Even if you `/clear` immediately after, the facts are safe.
+2. **Manual (the judgment).** Once you've evaluated the run, `/loops-save` stamps the part only a human can decide — `worked` / `partial` / `failed` plus the Reflexion lessons — onto that same record, and bumps the agent-type registry.
+
+`plan-with-loops` reads those records on its next run (Phase 1.5) to bias the design toward what's worked before — and `loops-graduate` promotes the repeat winners.
+
+**Optional vault backend.** The skills also detect the `query_vault` / `save_to_vault` MCP tools (an Obsidian-style vault) and mirror to them when present — but nothing requires it. Want a different backend (SQLite, a shared team store)? **Great first PR** — see below.
 
 ---
 
@@ -165,10 +172,10 @@ These skills speak **Claude Code native**, not LangGraph or CrewAI. The design t
 
 This started as one person's workflow and it's deliberately public so others can poke holes in it. **Issues, ideas, and PRs are genuinely wanted.** Some directions that would be great:
 
-- 🔌 **Make the memory backend pluggable** — swap the vault for plain markdown, SQLite, or another MCP store.
+- 🔌 **More memory backends** — markdown is the default; add SQLite, a shared team store, or deepen the optional vault mirror.
 - 🧩 **More loop patterns** in `reference.md` — got a tournament bracket, a self-repair loop, a staged-escalation pattern that works? Add it.
 - 📦 **Package as a Claude Code plugin** so it installs in one command.
-- 🧪 **Real-world loop records** — share a `loop-record-*` that worked (or instructively failed); negative lessons are valuable too.
+- 🧪 **Real-world loop records** — share a `loop-record-*` that worked (or instructively failed); negative lessons are valuable too. See [`examples/`](examples/) for the format.
 - 📝 Docs, examples, screenshots of a loop running.
 
 Open an issue to float an idea, or just send a PR. See [CONTRIBUTING.md](CONTRIBUTING.md). No contribution is too small — even a typo fix or a "this confused me" issue helps.

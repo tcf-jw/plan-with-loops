@@ -21,10 +21,11 @@ subagents.
 ## Hard rules
 
 - **Read-only. Write nothing.** Use only `Read`, `Grep`, `Glob`, `WebFetch`,
-  the `Explore` agent, and `query_vault` (recall only). Never
-  `Edit`/`Write`/`Bash`-mutate. This is a planner; output is a design doc, not
-  an implementation. (Capture/graduation is done by the `loops-save` /
-  `loops-graduate` companion skills, not here.)
+  the `Explore` agent, and the loop store (`~/.claude/loops/`, read-only) — plus
+  optional `query_vault` if that backend exists. Never `Edit`/`Write`/`Bash`-
+  mutate. This is a planner; output is a design doc, not an implementation. (The
+  *generated* Workflow does the auto-capture; `loops-save` / `loops-graduate`
+  do the rest — not this skill.)
 - **Autonomous, then approve.** Decide the agent roster and loop yourself from
   the effort level. Do **not** interview the user mid-run with a stream of
   questions. Present the finished design once, then ask for approval/edits.
@@ -52,15 +53,19 @@ Depth scales with effort: `low` = a few coarse steps; `high` = fine-grained
 steps with critical files and trade-offs called out.
 
 ### Phase 1.5 — Recall (read-only history)
-Before designing, query the vault for prior experience (Reflexion long-term
-memory): `query_vault(topic: "<task-type> loop record agent type", note_type:
-"WikiPage")`. Pull any `loop-record-*` and `agent-type-*` notes for similar
-tasks. Use them to **bias the design**:
+Before designing, read prior experience (Reflexion long-term memory) from the
+**loop store** — plain markdown in `~/.claude/loops/`. `Glob
+~/.claude/loops/loop-record-*.md` and `agent-type-*.md`, then `Grep`/`Read` the
+ones whose frontmatter (`loop_task_type`, tags) matches this task. Use them to
+**bias the design**:
 - prefer agent types / patterns with a `worked` outcome and high `success_count`;
 - avoid roster/pattern choices recorded as `partial`/`failed`;
 - carry forward each record's reusable lessons.
-Cite which records informed the design. If the vault is unavailable or empty,
-note "no prior loops found" and proceed from first principles.
+Cite which records informed the design.
+**Optional vault backend:** if the `query_vault` MCP tool is available, also
+recall from it (`query_vault(topic: "<task-type> loop record agent type")`). If
+the store is empty/absent, note "no prior loops found" and proceed from first
+principles.
 
 ### Phase 2 — Agent decomposition (autonomous)
 From the Phase 1 steps (and Phase 1.5 recall), decide the agent roster:
@@ -87,10 +92,22 @@ Read `reference.md`, then choose:
   held in context, so the loop survives the context window.
 
 ### Phase 4 — Implementation plan (output)
-Emit the design doc in the template below. Then **stop and ask**:
-"Approve, or want edits to the roster / loop / effort?" Since output is
-design-doc-only, do not write any files. On approval, hand off — note that the
-design can be run via the Workflow tool or fed to another session.
+Emit the design doc in the template below. **Every generated Workflow MUST end
+with a capture phase** (see below) so the run records itself — design it in now,
+don't bolt it on later. Then **stop and ask**: "Approve, or want edits to the
+roster / loop / effort?" Since output is design-doc-only, do not write any files
+yourself. On approval, hand off — note that the design can be run via the
+Workflow tool or fed to another session.
+
+#### The capture phase (mandatory in every generated loop)
+The factual half of a run — task, roster, topology, results, rough token cost —
+lives in the Workflow script scope at loop-end and is **exactly what gets lost**
+if capture waits for a manual step after context compaction. So the loop writes
+it itself: the final `phase('capture')` spawns a tiny **`recorder`** agent (with
+the `Write` tool) that writes `~/.claude/loops/loop-record-<slug>-<date>.md` with
+those facts, leaving `loop_outcome` + the Lessons section as `TODO`. The human
+later runs `/loops-save` to stamp outcome + Reflexion lessons onto that record.
+Pass today's date *into* the prompt — Workflow scripts have no clock.
 
 ## Output template
 
@@ -120,17 +137,26 @@ design can be run via the Workflow tool or fed to another session.
     const x = await agent('...', {schema, model})
     const results = await pipeline(items, stageA, stageB)
     // or parallel([...]) when a barrier is genuinely needed
+    phase('capture')          // mandatory final phase
+    await agent(`Write ~/.claude/loops/loop-record-<slug>-<date>.md with these
+      facts: task, roster, topology, results, rough token cost. Set loop_outcome
+      and the Lessons section to TODO.`, {label: 'recorder'})  // <date> from session
 - Subagent files to create: .claude/agents/<name>.md (role, tools, model)
 - Verification stage: <adversarial/critic agents, if any>
+- Capture: recorder agent writes the factual loop-record at loop-end
 ```
 
 ## Companion skills (loop-memory subsystem)
-- After a run the user judges successful (or instructively failed):
-  **`/loops-save`** captures it to the vault (loop record + agent-type registry
-  + Reflexion lessons).
+- The generated Workflow's **capture phase** auto-writes the factual loop-record
+  to `~/.claude/loops/` at loop-end — so no context is lost even if you compact
+  or `/clear` before judging the run.
+- Once the user judges it (worked / partial / failed): **`/loops-save`** stamps
+  the outcome + Reflexion lessons onto that record and updates the agent-type
+  registry.
 - To promote a proven loop into its own reusable skill: **`/loops-graduate`**.
 - This skill (`plan-with-loops`) is the read side — it recalls those records in
-  Phase 1.5 to improve each new plan.
+  Phase 1.5 to improve each new plan. Store = plain markdown (`~/.claude/loops/`);
+  the vault is an optional backend.
 
 ## Cost discipline
 Always surface the token cost: multi-agent runs cost several× a single serial

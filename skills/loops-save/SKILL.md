@@ -1,52 +1,66 @@
 ---
 name: loops-save
 description: >
-  Capture a completed agent-loop / orchestration run into the InfiniteVoid
-  vault so future planning can learn from it. Writes a loop-record note (task,
-  roster, topology, outcome, Reflexion lessons) plus an agent-type registry note
-  per subagent used. Use AFTER a run the user judges successful (or instructively
-  failed). Triggers: /loops-save, "save this loop", "record this run",
-  "remember this loop", "log this orchestration".
+  Capture a completed agent-loop / orchestration run to the loop store
+  (~/.claude/loops/) so future planning can learn from it. Stamps outcome +
+  Reflexion lessons onto the factual record the loop auto-wrote (or creates one
+  from context), plus an agent-type registry note per subagent used. Use AFTER a
+  run the user judges successful (or instructively failed). Triggers: /loops-save,
+  "save this loop", "record this run", "remember this loop", "log this
+  orchestration".
 ---
 
 # loops-save
 
-Manual capture step for the loop-memory subsystem. Persists a run to the vault
-so `plan-with-loops` can recall it later (Reflexion long-term memory). Companion
-to `plan-with-loops` (planner) and `loops-graduate` (promote to a skill).
+Capture step for the loop-memory subsystem. Persists a run to the **loop store**
+(`~/.claude/loops/`) so `plan-with-loops` can recall it later (Reflexion
+long-term memory). Companion to `plan-with-loops` (planner) and `loops-graduate`
+(promote to a skill).
 
-## What it writes (vault, via `save_to_vault`)
+Most runs are **half-captured already**: a Workflow built by `plan-with-loops`
+auto-writes a factual `loop-record-*.md` in its final `capture` phase (task,
+roster, topology, results, cost) with `loop_outcome` + Lessons left as `TODO`.
+This skill's main job is to **stamp the human judgment** — outcome + Reflexion
+lessons — onto that record while the evaluation is fresh. If no auto-record
+exists (e.g. the loop wasn't run via a generated Workflow), create one from
+conversation context.
 
-`save_to_vault(filename, content)` saves a markdown note to the vault inbox for
-ingestion (eventually queryable — not instant). Each save produces:
+## Where it writes (plain markdown — `Write` tool)
 
-1. **One loop-record note** — the run + its outcome + lessons.
-2. **One agent-type note per subagent used** — the reusable-agent registry.
+Files land in `~/.claude/loops/` (create the dir if missing):
+
+1. **One loop-record** — `loop-record-<slug>-<date>.md` (run + outcome + lessons).
+2. **One agent-type note per subagent** — `agent-type-<name>.md` (the reusable-
+   agent registry).
+
+No external service required. **Optional vault mirror:** if the `save_to_vault`
+MCP tool is present, also save copies there.
 
 ## Procedure
 
-1. **Gather the run** from conversation context (the `plan-with-loops` design
-   doc and what actually happened) or from the user. Capture: task, task-type
-   tags, effort, the agent roster, the loop pattern/topology.
+1. **Find the auto-record.** `Glob ~/.claude/loops/loop-record-*.md` for this run
+   (newest, or matching the task slug). If found, the facts are already there —
+   you only need to fill `loop_outcome` + the Lessons section. If absent, gather
+   the run from conversation context (the `plan-with-loops` design doc and what
+   actually happened): task, task-type tags, effort, roster, pattern/topology.
 2. **Determine outcome.** If the user hasn't said, ask once: **worked /
    partial / failed**. Save failed runs too — negative lessons are valuable.
 3. **Extract Reflexion lessons** (verbal feedback, not scores):
    - what worked · what failed / would change · what is reusable.
-4. **Update the agent registry.** For each subagent used: `query_vault(topic:
-   "agent type <name>", note_type: "WikiPage")`. If a note exists, carry its
-   prior `used_in` + `success_count` forward and increment; else start fresh.
-   Save the agent-type note (same filename → ingestion merges).
-5. **Save the loop-record note**, linking each agent with `[[agent-type-<name>]]`.
+4. **Update the agent registry.** For each subagent used: `Read
+   ~/.claude/loops/agent-type-<name>.md` if it exists; carry its prior `used_in`
+   + `success_count` forward and increment; else start fresh. `Write` the note
+   (same filename overwrites).
+5. **Write the loop-record**, linking each agent with `[[agent-type-<name>]]`.
+   Fill `loop_outcome` and the Lessons section; keep the auto-written facts intact.
 6. **Report** filenames written + a one-line summary.
 
 ## Note schemas
 
-### Loop record — filename `loop-record-<task-slug>-<yyyy-mm-dd>`
+### Loop record — `~/.claude/loops/loop-record-<task-slug>-<yyyy-mm-dd>.md`
 ```markdown
 ---
-type: WikiPage
-domain: AI
-tags: [ai, loop-record, plan-with-loops]
+tags: [loop-record, plan-with-loops]
 loop_task_type: <e.g. codebase-audit | research-synthesis | migration>
 loop_effort: <low|medium|high>
 loop_outcome: <worked|partial|failed>
@@ -80,12 +94,10 @@ date: <yyyy-mm-dd>
 - Reusable: <...>
 ```
 
-### Agent type — filename `agent-type-<name>`
+### Agent type — `~/.claude/loops/agent-type-<name>.md`
 ```markdown
 ---
-type: WikiPage
-domain: AI
-tags: [ai, agent-type, registry]
+tags: [agent-type, registry]
 agent_role: <one line>
 agent_model: <opus|sonnet|haiku>
 agent_tools: [Read, Grep, ...]
@@ -105,5 +117,6 @@ Model / tools rationale: <why this model + this tool scope>
 ## Rules
 - Always pass the date explicitly (today's date from context) — never invent one.
 - Don't fabricate outcomes or lessons; if the run's result is unknown, ask.
-- This skill **writes to the vault** (not to code) — it is not read-only, unlike
-  `plan-with-loops`.
+- This skill **writes markdown files** to `~/.claude/loops/` (not read-only,
+  unlike `plan-with-loops`). Create the dir if it doesn't exist; never touch
+  project code.

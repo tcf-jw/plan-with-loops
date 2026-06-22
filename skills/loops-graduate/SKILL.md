@@ -1,12 +1,13 @@
 ---
 name: loops-graduate
 description: >
-  Promote a proven agent-loop from the vault into a reusable global skill. Reads
-  the relevant loop-record note(s), verifies the loop has actually succeeded,
-  then scaffolds a new ~/.claude/skills/<name>/SKILL.md that encodes the proven
-  loop as a concrete Claude Code Workflow procedure. Triggers: /loops-graduate,
-  "promote this loop to a skill", "graduate this loop", "make a skill from this
-  loop", "turn this loop into a skill".
+  Promote a proven agent-loop from the loop store (~/.claude/loops/) into a
+  reusable global skill. Reads the relevant loop-record note(s), verifies the
+  loop has actually succeeded, then scaffolds a new ~/.claude/skills/<name>/
+  SKILL.md that encodes the proven loop as a concrete Claude Code Workflow
+  procedure. Triggers: /loops-graduate, "promote this loop to a skill",
+  "graduate this loop", "make a skill from this loop", "turn this loop into a
+  skill".
 ---
 
 # loops-graduate
@@ -18,12 +19,14 @@ the gatekeeper — promotion is always manual, one record at a time.
 ## Procedure
 
 1. **Find the record(s).** From `$ARGUMENTS` (a task-type, loop name, or record
-   slug), `query_vault(topic: "<that> loop record", note_type: "WikiPage")`.
-   Pull the matching `loop-record-*` note(s) and the linked `agent-type-*` notes.
-2. **Verify it's proven.** Require `loop_outcome: worked`. Prefer **repeated**
-   success — multiple worked records of the same `loop_task_type`, or agent
-   `success_count > 1`. If only a single success exists, **warn** and ask the
-   user to confirm before graduating a one-off.
+   slug), search the loop store: `Glob ~/.claude/loops/loop-record-*.md` then
+   `Grep`/`Read` for matches. Pull the matching `loop-record-*.md` and the linked
+   `agent-type-*.md` notes. (Optional: also `query_vault` if that backend is used.)
+2. **Verify it's proven.** Require `loop_outcome: worked` (ignore records still
+   marked `TODO` — those haven't been judged via `/loops-save` yet). Prefer
+   **repeated** success — multiple worked records of the same `loop_task_type`,
+   or agent `success_count > 1`. If only a single success exists, **warn** and
+   ask the user to confirm before graduating a one-off.
 3. **Confirm naming + scope.** Propose a kebab-case skill name; default scope is
    global (`~/.claude/skills/<name>/`). Confirm with the user.
 4. **Scaffold the skill.** Write `~/.claude/skills/<name>/SKILL.md` encoding the
